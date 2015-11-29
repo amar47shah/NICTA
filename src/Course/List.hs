@@ -75,8 +75,8 @@ headOr ::
   a
   -> List a
   -> a
-headOr _ (x :. _) = x
-headOr d _        = d
+headOr =
+  foldRight const
 
 -- | The product of the elements of a list.
 --
@@ -116,7 +116,7 @@ length ::
   List a
   -> Int
 length =
-  foldLeft (flip $ const succ) 0
+  foldLeft (const . succ) 0
 
 -- | Map the given function on each element of the list.
 --
@@ -148,7 +148,7 @@ filter ::
   -> List a
   -> List a
 filter p =
-  foldRight (\x xs -> if p x then x :. xs else xs) Nil
+  foldRight (\x -> if p x then (x :.) else id) Nil
 
 -- | Append two lists to a new list.
 --
@@ -319,20 +319,20 @@ produce ::
 produce f x =
   x :. produce f (f x)
 
--- | Do anything other than reverse a list.
+-- | Do anything other than reverse a list, fulfilling the given properties.
 -- Is it even possible?
 --
 -- >>> notReverse Nil
 -- []
 --
--- prop> let types = x :: List Int in notReverse x ++ notReverse y == notReverse (x ++ y)
+-- prop> let types = x :: List Int in notReverse x ++ notReverse y == notReverse (y ++ x)
 --
 -- prop> let types = x :: Int in notReverse (x :. Nil) == x :. Nil
 notReverse ::
   List a
   -> List a
 notReverse =
-  id
+  reverse -- impossible :)
 
 ---- End of list exercises
 
