@@ -31,10 +31,10 @@ Empty <+> o = o
 k <+> _     = k
 
 applyOptional :: Optional (a -> b) -> Optional a -> Optional b
-applyOptional f a = bindOptional (flip mapOptional a) f
+applyOptional = (. flip mapOptional) . flip bindOptional
 
 twiceOptional :: (a -> b -> c) -> Optional a -> Optional b -> Optional c
-twiceOptional f = applyOptional . mapOptional f
+twiceOptional = (applyOptional .) . mapOptional
 
 contains :: Eq a => a -> Optional a -> Bool
 contains _ Empty = False
