@@ -68,8 +68,8 @@ infixr 1 =<<
   f (a -> b)
   -> f a
   -> f b
-(<*>) =
-  error "todo: Course.Monad#(<*>)"
+mf <*> mx =
+  (<$> mx) =<< mf
 
 infixl 4 <*>
 
@@ -118,8 +118,8 @@ instance Monad ((->) t) where
     (a -> ((->) t b))
     -> ((->) t a)
     -> ((->) t b)
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance ((->) t)"
+  mf =<< mx =
+    \z -> (mf $ mx z) z
 
 -- | Flattens a combined structure to a single structure.
 --
@@ -139,7 +139,7 @@ join ::
   f (f a)
   -> f a
 join =
-  error "todo: Course.Monad#join"
+  (id =<<)
 
 -- | Implement a flipped version of @(=<<)@, however, use only
 -- @join@ and @(<$>)@.
@@ -152,8 +152,8 @@ join =
   f a
   -> (a -> f b)
   -> f b
-(>>=) =
-  error "todo: Course.Monad#(>>=)"
+mx >>= mf =
+  join $ mf <$> mx
 
 infixl 1 >>=
 
@@ -168,8 +168,8 @@ infixl 1 >>=
   -> (a -> f b)
   -> a
   -> f c
-(<=<) =
-  error "todo: Course.Monad#(<=<)"
+mf <=< mg =
+  \x -> mf =<< mg x
 
 infixr 1 <=<
 
