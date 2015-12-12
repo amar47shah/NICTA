@@ -83,8 +83,10 @@ instance Monad (State s) where
     (a -> State s b)
     -> State s a
     -> State s b
-  (=<<) =
-    error "todo: Course.State (=<<)#instance (State s)"
+  (=<<) k mx =
+    State $ \s ->
+      let (x, s') = runState mx s
+       in runState (k x) s'
 
 -- | Run the `State` seeded with `s` and retrieve the resulting state.
 --
