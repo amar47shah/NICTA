@@ -39,8 +39,11 @@ instance Functor (State s) where
     (a -> b)
     -> State s a
     -> State s b
-  (<$>) =
-      error "todo: Course.State#(<$>)"
+  (<$>) f s =
+    State $ mapFst f . runState s
+
+mapFst :: (a -> b) -> (a, c) -> (b, c)
+mapFst f (x, y) = (f x, y)
 
 -- | Implement the `Applicative` instance for `State s`.
 --
