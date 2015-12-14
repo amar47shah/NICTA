@@ -210,5 +210,8 @@ distinct xs = eval (filtering p xs) S.empty
 isHappy ::
   Integer
   -> Bool
-isHappy =
-  error "todo: Course.State#isHappy"
+isHappy = contains 1 . firstRepeat . produce h
+  where h = toInteger . sum . map (square . digitToInt) . show'
+
+square :: Num a => a -> a
+square = join (*)
