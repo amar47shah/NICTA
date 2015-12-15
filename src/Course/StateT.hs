@@ -40,7 +40,7 @@ instance Functor f => Functor (StateT s f) where
     -> StateT s f a
     -> StateT s f b
   g <$> cx =
-    StateT $ (mapFst g <$>) . (runStateT cx)
+    StateT $ (first g <$>) . (runStateT cx)
 
 -- | Implement the `Applicative` instance for @StateT s f@ given a @Monad f@.
 --
@@ -72,7 +72,7 @@ instance Monad f => Applicative (StateT s f) where
   ag <*> ax =
     StateT $ \s ->
       runStateT ag s >>= \(g, s') ->
-        runStateT ax s' >>= return . mapFst g
+        runStateT ax s' >>= return . first g
 
 -- | Implement the `Monad` instance for @StateT s f@ given a @Monad f@.
 -- Make sure the state value is passed through in `bind`.
@@ -89,7 +89,7 @@ instance Monad f => Monad (StateT s f) where
     -> StateT s f b
   k =<< mx =
     StateT $ \s ->
-      runStateT mx s >>= uncurry runStateT . mapFst k
+      runStateT mx s >>= uncurry runStateT . first k
 
 -- | A `State'` is `StateT` specialised to the `Id` functor.
 type State' s a =

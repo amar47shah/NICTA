@@ -40,10 +40,7 @@ instance Functor (State s) where
     -> State s a
     -> State s b
   (<$>) f s =
-    State $ mapFst f . runState s
-
-mapFst :: (a -> b) -> (a, c) -> (b, c)
-mapFst f (x, y) = (f x, y)
+    State $ first f . runState s
 
 -- | Implement the `Applicative` instance for `State s`.
 --
@@ -69,7 +66,7 @@ instance Applicative (State s) where
   (<*>) af ax =
     State $ \s ->
       let (f, s') = runState af s
-       in mapFst f $ runState ax s'
+       in first f $ runState ax s'
 
 -- | Implement the `Bind` instance for `State s`.
 --
