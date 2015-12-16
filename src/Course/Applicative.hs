@@ -155,8 +155,8 @@ instance Applicative ((->) t) where
     ((->) t (a -> b))
     -> ((->) t a)
     -> ((->) t b)
-  (<*>) f g x =
-    f x $ g x
+  f <*> g =
+    \x -> f x $ g x
 
 
 -- | Apply a binary function in the environment.

@@ -39,7 +39,7 @@ instance Functor (State s) where
     (a -> b)
     -> State s a
     -> State s b
-  (<$>) f s =
+  f <$> s =
     State $ first f . runState s
 
 -- | Implement the `Applicative` instance for `State s`.
@@ -63,10 +63,8 @@ instance Applicative (State s) where
     State s (a -> b)
     -> State s a
     -> State s b
-  (<*>) af ax =
-    State $ \s ->
-      let (f, s') = runState af s
-       in first f $ runState ax s'
+  af <*> ax =
+    State $ uncurry id . (first *** runState ax) . runState af
 
 -- | Implement the `Bind` instance for `State s`.
 --
@@ -80,10 +78,8 @@ instance Monad (State s) where
     (a -> State s b)
     -> State s a
     -> State s b
-  (=<<) k mx =
-    State $ \s ->
-      let (x, s') = runState mx s
-       in runState (k x) s'
+  k =<< mx =
+    State $ uncurry runState . first k . runState mx
 
 -- | Run the `State` seeded with `s` and retrieve the resulting state.
 --
@@ -112,7 +108,7 @@ eval =
 get ::
   State s s
 get =
-  State $ \s -> (s, s)
+  State $ join (,)
 
 -- | A `State` where the resulting state is seeded with the given value.
 --
@@ -158,7 +154,7 @@ firstRepeat ::
   List a
   -> Optional a
 firstRepeat xs = eval (findM p xs) S.empty
-    where p x = State $ \s -> (S.member x s, S.insert x s)
+    where p x = State $ S.member x &&& S.insert x
 --
 -- Solution without `State` and `findM`:
 --
@@ -179,7 +175,7 @@ distinct ::
   List a
   -> List a
 distinct xs = eval (filtering p xs) S.empty
-  where p x = State $ \s -> (S.notMember x s, S.insert x s)
+  where p x = State $ S.notMember x &&& S.insert x
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.
 -- In contrast, a sad number (not a happy number) is where the sum of the square of its digits never reaches 1

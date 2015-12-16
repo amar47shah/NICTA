@@ -119,7 +119,7 @@ instance Monad ((->) t) where
     -> ((->) t a)
     -> ((->) t b)
   mf =<< mx =
-    \z -> (mf $ mx z) z
+    \z -> (mf . mx) z z
 
 -- | Flattens a combined structure to a single structure.
 --
@@ -169,7 +169,7 @@ infixl 1 >>=
   -> a
   -> f c
 mf <=< mg =
-  \x -> mf =<< mg x
+  (mf =<<) . mg
 
 infixr 1 <=<
 

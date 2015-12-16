@@ -88,8 +88,7 @@ instance Monad f => Monad (StateT s f) where
     -> StateT s f a
     -> StateT s f b
   k =<< mx =
-    StateT $ \s ->
-      runStateT mx s >>= uncurry runStateT . first k
+    StateT $ (>>= uncurry runStateT . first k) . runStateT mx
 
 -- | A `State'` is `StateT` specialised to the `Id` functor.
 type State' s a =
