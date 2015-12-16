@@ -143,9 +143,7 @@ findM ::
   (a -> f Bool)
   -> List a
   -> f (Optional a)
-findM p (x :. xs) = p x >>= dependsM
-  where dependsM True  = return $ Full x
-        dependsM False = findM p xs
+findM p (x :. xs) = p x >>= depends (return $ Full x) (findM p xs)
 findM _ _ = return Empty
 
 -- | Find the first element in a `List` that repeats.

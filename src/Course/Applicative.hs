@@ -378,8 +378,6 @@ filtering ::
   -> f (List a)
 filtering _ Nil       = pure Nil
 filtering p (x :. xs) = depends (x :.) id <$> p x <*> filtering p xs
-  where depends v _ True  = v
-        depends _ w False = w
 
 -----------------------
 -- SUPPORT LIBRARIES --

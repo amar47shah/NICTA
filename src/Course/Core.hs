@@ -45,6 +45,7 @@ module Course.Core(
 , IsString(..)
 , module Data.Char
 , ifThenElse
+, depends
 ) where
 
 
@@ -110,3 +111,12 @@ ifThenElse True t _ =
   t
 ifThenElse False _ f =
   f
+
+-- depends === curry . flip $ uncurry . ifThenElse
+depends ::
+  a
+  -> a
+  -> Bool
+  -> a
+depends v _ True  = v
+depends _ w False = w
