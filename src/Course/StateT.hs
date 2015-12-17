@@ -102,7 +102,7 @@ state' ::
   (s -> (a, s))
   -> State' s a
 state' =
-  error "todo: Course.StateT#state'"
+  StateT . (Id .)
 
 -- | Provide an unwrapper for `State'` values.
 --
@@ -113,7 +113,7 @@ runState' ::
   -> s
   -> (a, s)
 runState' =
-  error "todo: Course.StateT#runState'"
+  (runId .) . runStateT
 
 -- | Run the `StateT` seeded with `s` and retrieve the resulting state.
 execT ::
@@ -122,7 +122,7 @@ execT ::
   -> s
   -> f s
 execT =
-  error "todo: Course.StateT#execT"
+  ((snd <$>) .) . runStateT
 
 -- | Run the `State` seeded with `s` and retrieve the resulting state.
 exec' ::
@@ -130,7 +130,7 @@ exec' ::
   -> s
   -> s
 exec' =
-  error "todo: Course.StateT#exec'"
+  (runId .) . execT
 
 -- | Run the `StateT` seeded with `s` and retrieve the resulting value.
 evalT ::
@@ -139,7 +139,7 @@ evalT ::
   -> s
   -> f a
 evalT =
-  error "todo: Course.StateT#evalT"
+  ((fst <$>) .) . runStateT
 
 -- | Run the `State` seeded with `s` and retrieve the resulting value.
 eval' ::
@@ -147,7 +147,7 @@ eval' ::
   -> s
   -> a
 eval' =
-  error "todo: Course.StateT#eval'"
+  (runId .) . evalT
 
 -- | A `StateT` where the state also distributes into the produced value.
 --
@@ -157,7 +157,7 @@ getT ::
   Monad f =>
   StateT s f s
 getT =
-  error "todo: Course.StateT#getT"
+  StateT $ return . join (,)
 
 -- | A `StateT` where the resulting state is seeded with the given value.
 --
@@ -171,7 +171,7 @@ putT ::
   s
   -> StateT s f ()
 putT =
-  error "todo: Course.StateT#putT"
+  StateT . const . return . (,) ()
 
 -- | Remove all duplicate elements in a `List`.
 --
@@ -182,8 +182,8 @@ distinct' ::
   (Ord a, Num a) =>
   List a
   -> List a
-distinct' =
-  error "todo: Course.StateT#distinct'"
+distinct' xs = eval' (filtering p xs) S.empty
+  where p x = state' $ S.notMember x &&& S.insert x
 
 -- | Remove all duplicate elements in a `List`.
 -- However, if you see a value greater than `100` in the list,
@@ -200,8 +200,9 @@ distinctF ::
   (Ord a, Num a) =>
   List a
   -> Optional (List a)
-distinctF =
-  error "todo: Course.StateT#distinctF"
+distinctF xs = evalT (filtering p xs) S.empty
+  where p x = StateT $ \s ->
+          ifThenElse (x > 100) Empty $ Full (S.notMember x s, S.insert x s)
 
 -- | An `OptionalT` is a functor of an `Optional` value.
 data OptionalT f a =
