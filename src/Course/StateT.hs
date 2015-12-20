@@ -251,8 +251,8 @@ data Logger l a =
 -- >>> (+3) <$> Logger (listh [1,2]) 3
 -- Logger [1,2] 6
 instance Functor (Logger l) where
-  (<$>) =
-    error "todo: Course.StateT (<$>)#instance (Logger l)"
+  f <$> Logger xs y =
+    Logger xs $ f y
 
 -- | Implement the `Applicative` instance for `Logger`.
 --
@@ -263,9 +263,9 @@ instance Functor (Logger l) where
 -- Logger [1,2,3,4] 10
 instance Applicative (Logger l) where
   pure =
-    error "todo: Course.StateT pure#instance (Logger l)"
-  (<*>) =
-    error "todo: Course.StateT (<*>)#instance (Logger l)"
+    Logger Nil
+  Logger xs f <*> Logger xs' y =
+    Logger (xs ++ xs') $ f y
 
 -- | Implement the `Monad` instance for `Logger`.
 -- The `bind` implementation must append log values to maintain associativity.
@@ -273,8 +273,8 @@ instance Applicative (Logger l) where
 -- >>> (\a -> Logger (listh [4,5]) (a+3)) =<< Logger (listh [1,2]) 3
 -- Logger [1,2,4,5] 6
 instance Monad (Logger l) where
-  (=<<) =
-    error "todo: Course.StateT (=<<)#instance (Logger l)"
+  k =<< Logger xs y =
+    Logger (xs ++ xs') y' where Logger xs' y' = k y
 
 -- | A utility function for producing a `Logger` with one log value.
 --
@@ -285,7 +285,7 @@ log1 ::
   -> a
   -> Logger l a
 log1 =
-  error "todo: Course.StateT#log1"
+  Logger . (:. Nil)
 
 -- | Remove all duplicate integers from a list. Produce a log as you go.
 -- If there is an element above 100, then abort the entire computation and produce no result.
