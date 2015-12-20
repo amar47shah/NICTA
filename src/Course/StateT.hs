@@ -305,10 +305,17 @@ distinctG ::
   (Integral a, Show a) =>
   List a
   -> Logger Chars (Optional (List a))
-distinctG xs = (evalT . runOptionalT) (filtering p xs) S.empty
-  where p x = OptionalT . StateT $ \s ->
-          case x > 100 of
-            True -> log1 ("aborting > 100: " ++ show' x) (Empty, s)
-            False -> case even x of
-                       True -> log1 ("even number: " ++ show' x) (Full $ S.notMember x s, S.insert x s)
-                       False -> Logger Nil (Full $ S.notMember x s, S.insert x s)
+distinctG xs =
+    (evalT . runOptionalT) (filtering (OptionalT . StateT . t) xs) S.empty
+  where
+    t ::
+      (Integral a, Show a) =>
+      a
+      -> S.Set a
+      -> Logger Chars (Optional Bool, S.Set a)
+    t x | x > 100   = log1 ("aborting > 100: " ++ show' x) . reject
+        | even x    = log1 ("even number: " ++ show' x) . accept
+        | otherwise = Logger Nil . accept
+      where
+        accept = Full . S.notMember x &&& S.insert x
+        reject = const Empty &&& id
