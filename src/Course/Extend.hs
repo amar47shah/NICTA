@@ -34,7 +34,7 @@ instance Extend Id where
     -> Id a
     -> Id b
   (<<=) =
-    error "todo: Course.Extend (<<=)#instance Id"
+    (Id .)
 
 -- | Implement the @Extend@ instance for @List@.
 --
@@ -51,8 +51,20 @@ instance Extend List where
     (List a -> b)
     -> List a
     -> List b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance List"
+  (<<=) f =
+    (f <$>) . init . scanr (:.) Nil
+        where
+      -- `init` is unsafe, but safe here
+      -- since the return value of `scanr (:.) i`
+      -- is a list ending in i
+      init       Nil  = undefined
+      init (_ :. Nil) = Nil
+      init (x :. xs ) = x :. init xs
+
+scanr :: (a -> b -> b) -> b -> List a -> List b
+scanr op i = snd . foldRight acc (i, i :. Nil)
+    where
+  acc x (v, a) = let v' = x `op` v in (v', v' :. a)
 
 -- | Implement the @Extend@ instance for @Optional@.
 --
@@ -66,8 +78,8 @@ instance Extend Optional where
     (Optional a -> b)
     -> Optional a
     -> Optional b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance Optional"
+  (<<=) f =
+    (f <$>) . (Full <$>)
 
 -- | Duplicate the functor using extension.
 --
@@ -87,4 +99,4 @@ cojoin ::
   f a
   -> f (f a)
 cojoin =
-  error "todo: Course.Extend#cojoin"
+  (id <<=)
