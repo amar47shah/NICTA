@@ -56,7 +56,8 @@ instance Extend List where
         where
       -- `init` is unsafe, but safe here
       -- since the return value of `scanr (:.) i`
-      -- is a list ending in i
+      -- is a non-empty list,
+      -- containing i as the final element
       init       Nil  = undefined
       init (_ :. Nil) = Nil
       init (x :. xs ) = x :. init xs
@@ -64,7 +65,9 @@ instance Extend List where
 scanr :: (a -> b -> b) -> b -> List a -> List b
 scanr op i = snd . foldRight acc (i, i :. Nil)
     where
-  acc x (v, a) = let v' = x `op` v in (v', v' :. a)
+  acc x (v, a) = (v', v' :. a)
+      where
+    v' = x `op` v
 
 -- | Implement the @Extend@ instance for @Optional@.
 --
