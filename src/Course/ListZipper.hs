@@ -569,8 +569,8 @@ start z =
 deletePullLeft ::
   ListZipper a
   -> MaybeListZipper a
-deletePullLeft (ListZipper Nil    _ _) = IsNotZ
 deletePullLeft (ListZipper (x:.l) _ r) = IsZ $ ListZipper l x r
+deletePullLeft (ListZipper _      _ _) = IsNotZ
 
 -- | Delete the current focus and pull the right values to take the empty position.
 --
@@ -582,8 +582,8 @@ deletePullLeft (ListZipper (x:.l) _ r) = IsZ $ ListZipper l x r
 deletePullRight ::
   ListZipper a
   -> MaybeListZipper a
-deletePullRight (ListZipper _ _ Nil   ) = IsNotZ
 deletePullRight (ListZipper l _ (x:.r)) = IsZ $ ListZipper l x r
+deletePullRight (ListZipper _ _ _     ) = IsNotZ
 
 -- | Insert at the current focus and push the left values to make way for the new position.
 --
