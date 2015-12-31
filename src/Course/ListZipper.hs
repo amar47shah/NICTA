@@ -154,6 +154,10 @@ asMaybeZipper f (IsZ z) =
 (-<<) =
   asMaybeZipper
 
+dependsMaybeZipper :: b -> (ListZipper a -> b) -> MaybeListZipper a -> b
+dependsMaybeZipper v _ IsNotZ  = v
+dependsMaybeZipper _ f (IsZ z) = f z
+
 -- | Convert the given zipper back to a list.
 --
 -- >>> toList <$> toOptional (fromList Nil)
@@ -417,12 +421,10 @@ moveLeftN ::
   Int
   -> ListZipper a
   -> MaybeListZipper a
-moveLeftN n z
- | n >  0    = case moveLeft z of
-                 IsNotZ -> IsNotZ
-                 IsZ z' -> moveLeftN (pred n) z'
- | n == 0    = IsZ z
- | otherwise = moveRightN (negate n) z
+moveLeftN n
+ | n >  0    = asMaybeZipper (moveLeftN $ pred n) . moveLeft
+ | n == 0    = IsZ
+ | otherwise = moveRightN $ negate n
 
 -- | Move the focus right the given number of positions. If the value is negative, move left instead.
 --
@@ -435,12 +437,10 @@ moveRightN ::
   Int
   -> ListZipper a
   -> MaybeListZipper a
-moveRightN n z
- | n >  0    = case moveRight z of
-                 IsNotZ -> IsNotZ
-                 IsZ z' -> moveRightN (pred n) z'
- | n == 0    = IsZ z
- | otherwise = moveLeftN (negate n) z
+moveRightN n
+ | n >  0    = asMaybeZipper (moveRightN $ pred n) . moveRight
+ | n == 0    = IsZ
+ | otherwise = moveLeftN $ negate n
 
 -- | Move the focus left the given number of positions. If the value is negative, move right instead.
 -- If the focus cannot be moved, the given number of times, return the value by which it can be moved instead.
@@ -469,14 +469,13 @@ moveLeftN' ::
   Int
   -> ListZipper a
   -> Either Int (ListZipper a)
-moveLeftN' n z
- | n >= 0    = go 0 n z
- | otherwise = moveRightN' (negate n) z
- where go q p x
-        | p >  0    = case moveLeft x of
-                        IsNotZ -> Left q
-                        IsZ x' -> go (succ q) (pred p) x'
-        | otherwise = Right x
+moveLeftN' n
+ | n >= 0    = go (0, n)
+ | otherwise = moveRightN' $ negate n
+ where
+   go (q, p)
+    | p >  0    = dependsMaybeZipper (Left q) (go (succ q, pred p)) . moveLeft
+    | otherwise = Right
 
 -- | Move the focus right the given number of positions. If the value is negative, move left instead.
 -- If the focus cannot be moved, the given number of times, return the value by which it can be moved instead.
@@ -499,14 +498,13 @@ moveRightN' ::
   Int
   -> ListZipper a
   -> Either Int (ListZipper a)
-moveRightN' n z
- | n >= 0    = go 0 n z
- | otherwise = moveLeftN' (negate n) z
- where go q p x
-        | p >  0    = case moveRight x of
-                        IsNotZ -> Left q
-                        IsZ x' -> go (succ q) (pred p) x'
-        | otherwise = Right x
+moveRightN' n
+ | n >= 0    = go (0, n)
+ | otherwise = moveLeftN' $ negate n
+ where
+   go (q, p)
+    | p >  0    = dependsMaybeZipper (Left q) (go (succ q, pred p)) . moveRight
+    | otherwise = Right
 
 -- | Move the focus to the given absolute position in the zipper. Traverse the zipper only to the extent required.
 --
@@ -683,9 +681,7 @@ instance Extend ListZipper where
     transform mover g = unfoldr $ tr mover g
     tr :: (ListZipper a -> MaybeListZipper a)
        -> (ListZipper a -> b) -> ListZipper a -> Optional (b, ListZipper a)
-    tr mover g z' = case mover z' of
-                       IsNotZ  -> Empty
-                       IsZ z'' -> Full (g z'', z'')
+    tr mover g = dependsMaybeZipper Empty (Full . (g &&& id)) . mover
 
 -- | Implement the `Extend` instance for `MaybeListZipper`.
 -- This instance will use the `Extend` instance for `ListZipper`.
