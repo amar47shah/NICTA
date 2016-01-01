@@ -107,8 +107,8 @@ character ::
   Parser Char
 character = P f
   where
-    f Nil     = ErrorResult UnexpectedEof
     f (c:.cs) = Result cs c
+    f _       = ErrorResult UnexpectedEof
 
 -- | Return a parser that maps any succeeding result with the given function.
 --
@@ -333,8 +333,8 @@ natural ::
   Parser Int
 natural = f . read =<< list1 digit
   where
-    f Empty    = failed
     f (Full n) = pure n
+    f _        = failed
 
 --
 -- | Return a parser that produces a space character but fails if
