@@ -60,7 +60,7 @@ isErrorResult (Result _ _) =
   False
 
 translate :: (a -> Input -> ParseResult b) -> Parser a -> Parser b
-translate f p = P $ failOr f . parse p
+translate f (P p) = P $ failOr f . p
 
 failOr :: (a -> Input -> ParseResult b) -> ParseResult a -> ParseResult b
 failOr _ (ErrorResult e) = ErrorResult e
@@ -212,10 +212,10 @@ p >>> q =
   Parser a
   -> Parser a
   -> Parser a
-p ||| q =
+P p ||| P q =
   P $ \i ->
-    case parse p i of
-      ErrorResult _ -> parse q i
+    case p i of
+      ErrorResult _ -> q i
       r             -> r
 
 infixl 3 |||
