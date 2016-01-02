@@ -116,7 +116,7 @@ string ::
   Chars
   -> Parser Chars
 string =
-  sequence . map is
+  traverse is
 
 -- | Write a function that parsers the given string, followed by 0 or more spaces.
 --
@@ -258,7 +258,7 @@ betweenCharTok =
 hex ::
   Parser Char
 hex =
-  extract . readHex =<< thisMany 4 (satisfy isHexDigit)
+  extract . readHex =<< replicateA 4 (satisfy isHexDigit)
       where
   extract (Full h) = pure . chr $ fromInteger h
   extract _        = failed
@@ -341,11 +341,10 @@ sepby p sep =
 -- True
 eof ::
   Parser ()
-eof =
-  P $ \i ->
-    case parse character i of
-      ErrorResult _ -> Result Nil ()
-      _             -> ErrorResult $ ExpectedEof i
+eof = P p
+  where
+    p Nil = Result Nil ()
+    p i   = ErrorResult $ ExpectedEof i
 
 -- | Write a parser that produces a character that satisfies all of the given predicates.
 --
@@ -419,4 +418,4 @@ betweenSepbyComma ::
   -> Parser a
   -> Parser (List a)
 betweenSepbyComma o c p =
-  betweenCharTok o c . sepby p $ is ','
+  betweenCharTok o c $ sepby p commaTok
