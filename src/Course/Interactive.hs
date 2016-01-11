@@ -18,7 +18,7 @@ vooid ::
   m a
   -> m ()
 vooid =
-  (<$>) (const ())
+  (const () <$>)
 
 -- | A version of @bind@ that ignores the result of the effect.
 (>-) ::
@@ -27,7 +27,7 @@ vooid =
   -> m b
   -> m b
 (>-) a =
-  (>>=) a . const
+  (a >>=) . const
 
 -- | Runs an action until a result of that action satisfies a given predicate.
 untilM ::
@@ -37,30 +37,17 @@ untilM ::
   -> m a
 untilM p a =
   a >>= \r ->
-  p r >>= \q ->
-  if q
-    then
-      pure r
-    else
-      untilM p a
+    p r >>= depends (return r) (untilM p a)
 
 -- | Example program that uses IO to echo back characters that are entered by the user.
 echo ::
   IO ()
 echo =
-  vooid (untilM
-          (\c ->
-            if c == 'q'
-              then
-                putStrLn "Bye!" >-
-                pure True
-              else
-                pure False)
-          (putStr "Enter a character: " >-
-           getChar >>= \c ->
-           putStrLn "" >-
-           putStrLn (c :. Nil) >-
-           pure c))
+  vooid $
+    untilM
+      (depends (putStrLn "Bye!" >- return True) (return False) . (== 'q'))
+      (putStr "Enter a character: " >- getChar >>=
+        \c -> putStrLn ('\n' :. c :. Nil) >- return c)
 
 data Op =
   Op Char Chars (IO ()) -- keyboard entry, description, program
