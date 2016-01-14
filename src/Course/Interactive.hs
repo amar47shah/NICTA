@@ -136,30 +136,18 @@ encodeInteractive =
 interactive ::
   IO ()
 interactive =
-  let ops = (
-               Op 'c' "Convert a string to upper-case" convertInteractive
-            :. Op 'r' "Reverse a file" reverseInteractive
-            :. Op 'e' "Encode a URL" encodeInteractive
-            :. Op 'q' "Quit" (pure ())
-            :. Nil
-            )
-  in vooid (untilM
-             (\c ->
-               if c == 'q'
-                 then
-                   putStrLn "Bye!" >-
-                   pure True
-                 else
-                   pure False)
-             (putStrLn "Select: " >-
-              traverse (\(Op c s _) ->
-                putStr (c :. Nil) >-
-                putStr ". " >-
-                putStrLn s) ops >-
-              getChar >>= \c ->
-              putStrLn "" >-
-              let o = find (\(Op c' _ _) -> c' == c) ops
-                  r = case o of
-                        Empty -> (putStrLn "Not a valid selection. Try again." >-)
-                        Full (Op _ _ k) -> (k >-)
-              in r (pure c)))
+  let ops =  Op 'c' "Convert a string to upper-case" convertInteractive
+          :. Op 'r' "Reverse a file" reverseInteractive
+          :. Op 'e' "Encode a URL" encodeInteractive
+          :. Op 'q' "Quit" (pure ())
+          :. Nil
+      printOp (Op c s _) = putStr (c :. Nil) >- putStr ". " >- putStrLn s
+      match c (Op d _ _) = c == d
+      handle (Full (Op _ _ k)) = (k >-)
+      handle _                 = (putStrLn "Not a valid selection. Try again." >-)
+  in vooid
+     . untilM (depends (putStrLn "Bye!" >- return True) (return False) . (== 'q'))
+     $ putStrLn "Select: " >-
+       traverse printOp ops >-
+       getChar >>=
+       \c -> (putStrLn "" >-) . handle (find (match c) ops) $ return c
