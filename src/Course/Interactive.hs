@@ -39,15 +39,18 @@ untilM p a =
   a >>= \r ->
     p r >>= depends (return r) (untilM p a)
 
+quitOnQ :: Char -> IO Bool
+quitOnQ = depends (putStrLn "Bye!" >- return True) (return False) . (== 'q')
+
 -- | Example program that uses IO to echo back characters that are entered by the user.
 echo ::
   IO ()
 echo =
-  vooid $
-    untilM
-      (depends (putStrLn "Bye!" >- return True) (return False) . (== 'q'))
-      (putStr "Enter a character: " >- getChar >>=
-        \c -> putStrLn ('\n' :. c :. Nil) >- return c)
+  vooid
+    . untilM quitOnQ
+    $ putStr "Enter a character: " >-
+      getChar >>=
+      \c -> putStrLn ('\n' :. c :. Nil) >- return c
 
 data Op =
   Op Char Chars (IO ()) -- keyboard entry, description, program
@@ -146,7 +149,7 @@ interactive =
       handle (Full (Op _ _ k)) = (k >-)
       handle _                 = (putStrLn "Not a valid selection. Try again." >-)
   in vooid
-     . untilM (depends (putStrLn "Bye!" >- return True) (return False) . (== 'q'))
+     . untilM quitOnQ
      $ putStrLn "Select: " >-
        traverse printOp ops >-
        getChar >>=
