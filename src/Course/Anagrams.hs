@@ -8,6 +8,10 @@ import Course.Core
 import Course.List
 import Course.Functor
 
+-- Remove these
+import Course.Applicative
+import Course.Monad
+
 {-
 
 Functions you will need
@@ -25,15 +29,19 @@ Functions that might help
 
 -}
 
-
 -- Return all anagrams of the given string
 -- that appear in the given dictionary file.
+--
+-- >> anagrams "ASP" "share/threes.txt"
+-- ["ASP","PAS","SAP","SPA"]
+--
 anagrams ::
   Chars
   -> Filename
   -> IO (List Chars)
-anagrams =
-  error "todo: Course.Anagrams#anagrams"
+anagrams cs filename = do
+  dictionary <- lines <$> readFile filename
+  return . intersectBy (==) dictionary $ permutations cs
 
 -- Compare two strings for equality, ignoring case
 equalIgnoringCase ::
