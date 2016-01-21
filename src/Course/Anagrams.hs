@@ -39,9 +39,9 @@ anagrams ::
   Chars
   -> Filename
   -> IO (List Chars)
-anagrams cs filename = do
-  dictionary <- lines <$> readFile filename
-  return . intersectBy (==) dictionary $ permutations cs
+anagrams cs filename =
+  lines <$> readFile filename >>=
+  return . intersectBy (==) (permutations cs)
 
 -- Compare two strings for equality, ignoring case
 equalIgnoringCase ::
