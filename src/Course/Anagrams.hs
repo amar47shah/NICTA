@@ -8,10 +8,6 @@ import Course.Core
 import Course.List
 import Course.Functor
 
--- Remove these
-import Course.Applicative
-import Course.Monad
-
 {-
 
 Functions you will need
@@ -40,8 +36,7 @@ anagrams ::
   -> Filename
   -> IO (List Chars)
 anagrams cs filename =
-  lines <$> readFile filename >>=
-  return . intersectBy (==) (permutations cs)
+  intersectBy (==) (permutations cs) . lines <$> readFile filename
 
 -- Compare two strings for equality, ignoring case
 equalIgnoringCase ::
