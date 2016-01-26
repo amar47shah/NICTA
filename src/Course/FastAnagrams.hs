@@ -10,11 +10,13 @@ import qualified Data.Map as M
 
 -- Return all anagrams of the given string
 -- that appear in the given dictionary file.
-counts :: Chars -> M.Map Char Int
-counts = foldRight (\c -> M.insertWith (+) c 1) M.empty
+counts :: NoCaseString -> M.Map Char Int
+counts = foldRight count M.empty . uncased
+    where
+  count c = M.insertWith (+) c 1
 
 match :: Chars -> Chars -> Bool
-match = (==) `on` counts
+match = (==) `on` counts . NoCaseString
 
 fastAnagrams ::
   Chars
@@ -23,7 +25,11 @@ fastAnagrams ::
 fastAnagrams cs filename =
   filter (match cs) . lines <$> readFile filename
 
--- Ignoring this:
+class Case a where
+  noCase :: a -> a
+
+instance Case Char where
+  noCase = toLower
 
 newtype NoCaseString =
   NoCaseString {
@@ -31,7 +37,10 @@ newtype NoCaseString =
   }
 
 instance Eq NoCaseString where
-  (==) = (==) `on` map toLower . ncString
+  (==) = (==) `on` uncased
 
 instance Show NoCaseString where
-  show = show . ncString
+  show = show . uncased
+
+uncased :: NoCaseString -> Chars
+uncased = map noCase . ncString
