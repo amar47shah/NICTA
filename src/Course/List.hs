@@ -422,6 +422,17 @@ break ::
 break p =
   span (not . p)
 
+breakRight ::
+  (a -> Bool)
+  -> List a
+  -> (List a, List a)
+breakRight p = foldRight acc (Nil, Nil)
+    where
+  acc x (Nil, rs)
+   | p x         = (x:.Nil,    rs)
+   | otherwise   = (   Nil, x:.rs)
+  acc x (ls, rs) = (x:.ls ,    rs)
+
 dropWhile ::
   (a -> Bool)
   -> List a
