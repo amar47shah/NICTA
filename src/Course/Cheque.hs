@@ -247,6 +247,22 @@ fromChar '9' =
 fromChar _ =
   Empty
 
+allowables :: Chars
+allowables = fromString "0123456789."
+
+shape :: Chars -> Chars
+shape = uncurry (++) . (dols *** cents) . break (== '.')
+    where
+  dols "" = "0"
+  dols ds = ds
+  cents   = cents' . filter (/= '.')
+  cents' (t :. h :. _) = '.' :. t :. h :. Nil
+  cents' (t :. Nil)    = '.' :. t :. "0"
+  cents' _             = ".00"
+
+clean :: Chars -> Chars
+clean = shape . filter (`elem` allowables)
+
 -- | Take a numeric value and produce its English output.
 --
 -- >>> dollars "0"
