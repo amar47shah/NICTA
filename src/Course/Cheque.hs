@@ -189,29 +189,56 @@ data Digit =
   | Nine
   deriving (Eq, Enum, Bounded)
 
-showDigit ::
-  Digit
-  -> Chars
-showDigit Zero =
-  "zero"
-showDigit One =
-  "one"
-showDigit Two =
-  "two"
-showDigit Three =
-  "three"
-showDigit Four =
-  "four"
-showDigit Five =
-  "five"
-showDigit Six =
-  "six"
-showDigit Seven =
-  "seven"
-showDigit Eight =
-  "eight"
-showDigit Nine =
-  "nine"
+instance Show Digit where
+  show = show . showDigit
+
+showDigit :: Digit -> Chars
+showDigit Zero  = "zero"
+showDigit One   = "one"
+showDigit Two   = "two"
+showDigit Three = "three"
+showDigit Four  = "four"
+showDigit Five  = "five"
+showDigit Six   = "six"
+showDigit Seven = "seven"
+showDigit Eight = "eight"
+showDigit Nine  = "nine"
+
+showDigit3 :: Digit3 -> Chars
+showDigit3 (D1           o) = showDigit o
+showDigit3 (D2      Zero o) = showDigit o
+showDigit3 (D2      t    o) = underHundred t o
+showDigit3 (D3 Zero t    o) = showDigit3 $ D2 t o
+showDigit3 (D3 h    t    o) = hundreds h ++ " and " ++ showDigit3 (D2 t o)
+
+hundreds :: Digit -> Chars
+hundreds h = showDigit h ++ " hundred"
+
+underHundred :: Digit -> Digit -> Chars
+underHundred Zero o     = showDigit o
+underHundred One  Zero  = "ten"
+underHundred One  One   = "eleven"
+underHundred One  Two   = "twelve"
+underHundred One  Three = "thirteen"
+underHundred One  Four  = "fourteen"
+underHundred One  Five  = "fifteen"
+underHundred One  Six   = "sixteen"
+underHundred One  Seven = "seventeen"
+underHundred One  Eight = "eighteen"
+underHundred One  Nine  = "nineteen"
+underHundred t    Zero  = tens t
+underHundred t    o     = tens t ++ '-' :. showDigit o
+
+tens :: Digit -> Chars
+tens Two   = "twenty"
+tens Three = "thirty"
+tens Four  = "forty"
+tens Five  = "fifty"
+tens Six   = "sixty"
+tens Seven = "seventy"
+tens Eight = "eighty"
+tens Nine  = "ninety"
+tens _     = ""
 
 -- A data type representing one, two or three digits, which may be useful for grouping.
 data Digit3 =
@@ -221,47 +248,42 @@ data Digit3 =
   deriving Eq
 
 -- Possibly convert a character to a digit.
-fromChar ::
-  Char
-  -> Optional Digit
-fromChar '0' =
-  Full Zero
-fromChar '1' =
-  Full One
-fromChar '2' =
-  Full Two
-fromChar '3' =
-  Full Three
-fromChar '4' =
-  Full Four
-fromChar '5' =
-  Full Five
-fromChar '6' =
-  Full Six
-fromChar '7' =
-  Full Seven
-fromChar '8' =
-  Full Eight
-fromChar '9' =
-  Full Nine
-fromChar _ =
-  Empty
+fromChar :: Char -> Optional Digit
+fromChar '0' = Full Zero
+fromChar '1' = Full One
+fromChar '2' = Full Two
+fromChar '3' = Full Three
+fromChar '4' = Full Four
+fromChar '5' = Full Five
+fromChar '6' = Full Six
+fromChar '7' = Full Seven
+fromChar '8' = Full Eight
+fromChar '9' = Full Nine
+fromChar  _  = Empty
 
 allowables :: Chars
 allowables = fromString "0123456789."
 
-shape :: Chars -> Chars
-shape = uncurry (++) . (dols *** cents) . break (== '.')
+format :: Chars -> Chars
+format = uncurry (++) . (dols *** cnts) . break (== '.')
     where
   dols "" = "0"
   dols ds = ds
-  cents   = cents' . filter (/= '.')
-  cents' (t :. h :. _) = '.' :. t :. h :. Nil
-  cents' (t :. Nil)    = '.' :. t :. "0"
-  cents' _             = ".00"
+  cnts    = cnts' . filter (/= '.')
+  cnts' (t :. h :. _) = '.' :. t :. h :. Nil
+  cnts' (t :. Nil)    = '.' :. t :. "0"
+  cnts' _             = ".00"
 
 clean :: Chars -> Chars
-clean = shape . filter (`elem` allowables)
+clean = format . filter (`elem` allowables)
+
+onlyDollars :: Chars -> Chars
+onlyDollars = undefined
+
+onlyCents :: Chars -> Chars
+onlyCents cs =
+  let t :. o :. _ = (sequence $ fromChar <$> cs) ?? listh [Zero, Zero]
+   in underHundred t o
 
 -- | Take a numeric value and produce its English output.
 --
@@ -340,4 +362,7 @@ dollars ::
   Chars
   -> Chars
 dollars =
-  error "todo: Course.Cheque#dollars"
+  together . (onlyDollars &&& onlyCents)
+      where
+  together :: (Chars, Chars) -> Chars
+  together (d, c) = d ++ " dollars and " ++ c ++ " cents"
