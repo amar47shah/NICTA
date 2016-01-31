@@ -609,6 +609,23 @@ drop _ Nil =
 drop n (_:.xs) =
   drop (n-1) xs
 
+splitAt ::
+  (Num n, Ord n) =>
+  n
+  -> List a
+  -> (List a, List a)
+splitAt n =
+  take n &&& drop n
+
+splitEvery ::
+  (Num n, Ord n) =>
+  n
+  -> List a
+  -> List (List a)
+splitEvery _ Nil = Nil
+splitEvery n xs = chunk :. splitEvery n rest
+  where (chunk, rest) = splitAt n xs
+
 repeat ::
   a
   -> List a
