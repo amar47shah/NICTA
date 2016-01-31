@@ -190,7 +190,7 @@ data Digit =
   deriving (Eq, Enum, Bounded)
 
 instance Show Digit where
-  show = show . showDigit
+  show = show . ("Digit " ++) . showDigit
 
 showDigit :: Digit -> Chars
 showDigit Zero  = "zero"
@@ -206,10 +206,14 @@ showDigit Nine  = "nine"
 
 showDigit3 :: Digit3 -> Chars
 showDigit3 (D1           o) = showDigit o
-showDigit3 (D2      Zero o) = showDigit o
+showDigit3 (D2      Zero o) = showDigit3 $ D1 o
 showDigit3 (D2      t    o) = underHundred t o
 showDigit3 (D3 Zero t    o) = showDigit3 $ D2 t o
-showDigit3 (D3 h    t    o) = hundreds h ++ " and " ++ showDigit3 (D2 t o)
+showDigit3 (D3 h    t    o) = overHundred h t o
+
+overHundred :: Digit -> Digit -> Digit -> Chars
+overHundred h Zero Zero = hundreds h
+overHundred h t o       = hundreds h ++ " and " ++ underHundred t o
 
 hundreds :: Digit -> Chars
 hundreds h = showDigit h ++ " hundred"
@@ -240,6 +244,12 @@ tens Eight = "eighty"
 tens Nine  = "ninety"
 tens _     = ""
 
+isZero :: Digit3 -> Bool
+isZero (D1 Zero)           = True
+isZero (D2 Zero Zero)      = True
+isZero (D3 Zero Zero Zero) = True
+isZero _                   = False
+
 -- A data type representing one, two or three digits, which may be useful for grouping.
 data Digit3 =
   D1 Digit
@@ -264,21 +274,33 @@ fromChar  _  = Empty
 allowables :: Chars
 allowables = fromString "0123456789."
 
-format :: Chars -> Chars
-format = uncurry (++) . (dols *** cnts) . break (== '.')
+dollarsAndCents :: Chars -> (Chars, Chars)
+dollarsAndCents = dollarsAndCents' . filter (`elem` allowables)
+
+dollarsAndCents' :: Chars -> (Chars, Chars)
+dollarsAndCents' = (dols *** cnts) . break (== '.')
     where
+  dols, cnts, cnts' :: Chars -> Chars
   dols "" = "0"
   dols ds = ds
   cnts    = cnts' . filter (/= '.')
-  cnts' (t :. h :. _) = '.' :. t :. h :. Nil
-  cnts' (t :. Nil)    = '.' :. t :. "0"
-  cnts' _             = ".00"
-
-clean :: Chars -> Chars
-clean = format . filter (`elem` allowables)
+  cnts' (t :. h :. _) = t :. h :. ""
+  cnts' (t :. _)      = t :. "0"
+  cnts' _             = "00"
 
 onlyDollars :: Chars -> Chars
-onlyDollars = undefined
+onlyDollars cs =
+  let digs  = (sequence $ fromChar <$> cs) ?? listh [Zero]
+      dig3s = case length digs `mod` 3 of
+                2 -> let (t:.o:._, ds) = splitAt 2 digs in D2 t o :. groupD3 ds
+                1 -> let    (o:._, ds) = splitAt 1 digs in D1   o :. groupD3 ds
+                _ -> groupD3 digs
+      groupD3 = map (\(h:.t:.o:.Nil) -> D3 h t o) . splitEvery 3
+      illionize (d3, "") = showDigit3 d3
+      illionize (d3, il) = showDigit3 d3 ++ ' ' :. il
+      i :. is = zip (reverse dig3s) illion
+   in intercalate " " . reverse
+    $ illionize <$> i :. filter (not . isZero . fst) is
 
 onlyCents :: Chars -> Chars
 onlyCents cs =
@@ -361,8 +383,12 @@ onlyCents cs =
 dollars ::
   Chars
   -> Chars
-dollars =
-  together . (onlyDollars &&& onlyCents)
-      where
-  together :: (Chars, Chars) -> Chars
-  together (d, c) = d ++ " dollars and " ++ c ++ " cents"
+dollars = together
+        . (plural "dollar" *** plural "cent")
+        . (onlyDollars *** onlyCents)
+        . dollarsAndCents
+  where together :: (Chars, Chars) -> Chars
+        together (d, c) = d ++ " and " ++ c
+        plural :: Chars -> Chars -> Chars
+        plural noun "one"  = "one " ++ noun
+        plural noun number = number ++ " " ++ noun ++ "s"
