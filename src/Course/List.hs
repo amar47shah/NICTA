@@ -585,6 +585,26 @@ intersectBy ::
 intersectBy e xs ys =
   filter (\x -> any (e x) ys) xs
 
+weave ::
+  List a
+  -> List a
+  -> List a
+weave xs ys = flatten $ zipWith (\x y -> x :. y :. Nil) xs ys
+
+intersperse ::
+  a
+  -> List a
+  -> List a
+intersperse _ Nil    = Nil
+intersperse s (x:.xs) = x :. prependToAll s xs
+  where prependToAll t = foldRight (\y ys -> t :. y :. ys) Nil
+
+intercalate ::
+  List a
+  -> List (List a)
+  -> List a
+intercalate = (flatten .) . intersperse
+
 take ::
   (Num n, Ord n) =>
   n
