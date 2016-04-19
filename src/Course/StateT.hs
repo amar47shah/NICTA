@@ -72,7 +72,8 @@ instance Monad f => Applicative (StateT s f) where
   ag <*> ax =
     StateT $ \s ->
       runStateT ag s >>= \(g, s') ->
-        runStateT ax s' >>= return . first g
+        runStateT ax s' >>= \(x, s'') ->
+          return (g x, s'')
 
 -- | Implement the `Monad` instance for @StateT s f@ given a @Monad f@.
 -- Make sure the state value is passed through in `bind`.
@@ -88,7 +89,9 @@ instance Monad f => Monad (StateT s f) where
     -> StateT s f a
     -> StateT s f b
   k =<< mx =
-    StateT $ (>>= uncurry runStateT . first k) . runStateT mx
+    StateT $ \s ->
+      runStateT mx s >>= \(x, s') ->
+        runStateT (k x) s'
 
 -- | A `State'` is `StateT` specialised to the `Id` functor.
 type State' s a =
